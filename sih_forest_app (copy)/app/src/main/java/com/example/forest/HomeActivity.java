@@ -4,8 +4,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,6 +23,8 @@ import java.util.Map;
 public class HomeActivity extends AppCompatActivity {
     //Button btnMap,btnPrediction,btnTask;
     private static final String TAG = "HomeActivity";
+
+    public static boolean iflag;
 
     private static final int PERMISSIONS_REQUEST = 1;
     private static final String PERMISSION_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
@@ -45,8 +50,16 @@ public class HomeActivity extends AppCompatActivity {
             requestPermission();
         }
 
-        startService(new Intent(getApplicationContext(), MqttService.class));
-        startService(new Intent(getApplicationContext(), ForestService.class));
+        Log.d(TAG, "network connection status");
+        System.out.println(isNetworkAvailable());
+        if (isNetworkAvailable()) {
+            iflag = true;
+            startService(new Intent(getApplicationContext(), InternetService.class));
+        } else {
+            iflag = false;
+            startService(new Intent(getApplicationContext(), MqttService.class));
+            startService(new Intent(getApplicationContext(), ForestService.class));
+        }
 
         cvTask.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -81,6 +94,13 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     private void getCurrentLocation() {
